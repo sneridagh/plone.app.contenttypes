@@ -55,7 +55,7 @@ I set the collection's creator criterion to
 
     I select criteria index in row 1 Creator
     I select criteria operator in row 1 Is
-    #Input Text  name=form.widgets.ICollection.query.v:records  ${criterion}
+    Input Text  name=form.widgets.ICollection.query.v:records  ${criterion}
 
     Click Button  Save
     Wait until page contains  Changes saved
