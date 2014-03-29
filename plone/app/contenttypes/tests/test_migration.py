@@ -56,19 +56,19 @@ class MigrateToATContentTypesTest(unittest.TestCase):
                                   dst_portal_type=dst_portal_type)
         return migrator
 
-    def createATCTobject(self, klass, id, parent=None):
+    def createATCTobject(self, klass, oid, parent=None):
         '''Borrowed from ATCTFieldTestCase'''
         import transaction
         parent = parent if parent else self.portal
-        obj = klass(oid=id)
-        parent[id] = obj
+        obj = klass(oid=oid)
+        parent[oid] = obj
         transaction.savepoint()
         # need to aq wrap after the savepoint. wrapped content can't be pickled
         obj = obj.__of__(parent)
         obj.initializeArchetype()
         return obj
 
-    def createATCTBlobNewsItem(self, id, parent=None):
+    def createATCTBlobNewsItem(self, oid, parent=None):
         from Products.Archetypes.atapi import StringField, TextField
         from Products.ATContentTypes.interface import IATNewsItem
         from archetypes.schemaextender.interfaces import ISchemaExtender
@@ -110,7 +110,7 @@ class MigrateToATContentTypesTest(unittest.TestCase):
 
         # create content
         container = parent or self.portal
-        container.invokeFactory('News Item', id)
+        container.invokeFactory('News Item', oid)
         at_newsitem = container['newsitem']
 
         # unregister adapter assure test isolation
@@ -195,7 +195,6 @@ class MigrateToATContentTypesTest(unittest.TestCase):
         """Can we migrate a plone.app.event AT event?"""
         from DateTime import DateTime
         from plone.testing import z2
-        from plone.app.testing import applyProfile
         from plone.app.contenttypes.migration.migration import migrate_events
 
         # Enable plone.app.event.at
@@ -268,7 +267,6 @@ class MigrateToATContentTypesTest(unittest.TestCase):
         from plone.app.textfield.value import RichTextValue
 
         # Enable plone.app.event.dx
-        from plone.app.testing import applyProfile
         applyProfile(self.portal, 'plone.app.event:testing')
 
         old_event = self.portal[self.portal.invokeFactory(
@@ -385,7 +383,6 @@ class MigrateToATContentTypesTest(unittest.TestCase):
         from plone.app.contenttypes.migration.migration import DXEventMigrator
 
         # Enable plone.app.event.dx
-        from plone.app.testing import applyProfile
         applyProfile(self.portal, 'plone.app.event:testing')
 
         old_event = self.portal[self.portal.invokeFactory(
