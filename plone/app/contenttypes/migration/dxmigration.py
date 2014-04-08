@@ -26,9 +26,12 @@ class ContentMigrator(CMFItemMigrator):
 
 
 def migrate_to_pa_event(context):
-    # Re-import event-profile to get newest Event type
-    context.runAllImportStepsFromProfile(
-        'profile-plone.app.contenttypes:event',
+    # Install plone.app.event
+    context.runAllImportStepsFromProfile('profile-plone.app.event:default')
+    # Re-import types to get newest Event type
+    context.runImportStepFromProfile(
+        'profile-plone.app.contenttypes:default',
+        'typeinfo'
     )
     portal = getSite()
     migrate(portal, DXOldEventMigrator)
