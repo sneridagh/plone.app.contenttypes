@@ -42,4 +42,22 @@
       handler=".upgrades.migrate_to_richtext"
       />
 
+  <genericsetup:upgradeStep
+      source="1101"
+      destination="1102"
+      title="Update album_view"
+      description=""
+      profile="plone.app.contenttypes:default"
+      handler=".upgrades.migrate_album_view"
+      />
+
+  <genericsetup:upgradeStep
+      source="1102"
+      destination="1103"
+      title="Add shortname-behavior"
+      description=""
+      profile="plone.app.contenttypes:default"
+      handler=".upgrades.enable_shortname_behavior"
+      />
+
 </configure>

@@ -1,13 +1,58 @@
 Changelog
 =========
 
-1.1b3 (unreleased)
+1.2a2 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- Enable IShortName for all default-types.
+  [pbauer, mikejmets]
+
+- Replace AT-fti with DX-fti when migrating a type.
+  [pbauer]
+
+- Split up profiles so we have one profile per type
+  [pbauer, yenzenz]
+
+- Add form to install pac's core-profile and forward to dx_migration
+  after a successful migration to Plone 5
+  [pbauer]
+
+- Rename atct_album_view to folder_album_view.
+  [pbauer]
+
+- Do a better check, if LinguaPlone is installed, based on the presence of the
+  "LinguaPlone" browser layer. Asking the quick installer tool might claim it's
+  installed, where it's not.
+  [thet]
+
+- Register folderish views not for plone.app.contenttypes' IFolder but for
+  plone.dexterity's IDexterityContainer. Now, these views can be used on any
+  folderish Dexterity content.
+  [thet]
+
+- Add a ICustomMigrator interface to the migration framework, which can be used
+  to register custom migrator adapters. This can be useful to add custom
+  migrators to more than one or all content types. For example for
+  schemaextenders, which are registered on a interface, which is provided by
+  several content types.
+  [thet]
+
+- In the migration framework, fix queries for Archetype objects, where only
+  interfaces are used to skip brains with no or Dexterity meta_type. In some
+  cases Dexterity and Archetype objects might provide the same marker
+  interfaces.
+  [thet]
+
+- Add logging messages to content migrator for more verbosity on what's
+  happening while running the migration.
+  [thet]
+
+- Use Plone 4 based @@atct_migrator and @@atct_migrator_results template
+  structure.
+  [thet]
 
 
-1.1b2 (2014-02-21)
+1.2a1 (2014-02-22)
 ------------------
 
 - Fix viewlet warning about ineditable content (fixes #130)
@@ -78,6 +123,10 @@ Changelog
   plone.app.contenttypes 1.0 Event to plone.app.contenttypes 1.1
   Event based on plone.app.event's Dexterity behaviors.
   [lentinj]
+
+- Remove DL's from portal message templates.
+  https://github.com/plone/Products.CMFPlone/issues/153
+  [khink]
 
 - Collection: get ``querybuilderresults`` view instead of using the
   ``QueryBuilder`` class directly.

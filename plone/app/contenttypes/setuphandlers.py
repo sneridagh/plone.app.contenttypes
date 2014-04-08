@@ -3,11 +3,9 @@ from AccessControl import Unauthorized
 from Acquisition import aq_base, aq_inner
 from Products.CMFCore.utils import getToolByName
 from Products.CMFDefault.utils import bodyfinder
-from Products.CMFPlone.Portal import member_indexhtml
 from Products.CMFPlone.interfaces import INonInstallable
 from Products.CMFPlone.interfaces.constrains import ISelectableConstrainTypes
 from Products.CMFPlone.utils import _createObjectByType
-from Products.PythonScripts.PythonScript import PythonScript
 from datetime import timedelta
 from plone.app.textfield.value import RichTextValue
 from plone.dexterity.fti import IDexterityFTI
@@ -47,12 +45,21 @@ class HiddenProfiles(object):
 
     def getNonInstallableProfiles(self):
         """
-        Prevents uninstall profile from showing up in the profile list
-        when creating a Plone site.
+        Prevents all profiles but 'plone-content' from showing up in the
+        profile list when creating a Plone site.
         """
         return [
             u'plone.app.contenttypes:uninstall',
-            u'plone.app.contenttypes:default'
+            u'plone.app.contenttypes:default',
+            u'plone.app.contenttypes:event',
+            u'plone.app.contenttypes:collection',
+            u'plone.app.contenttypes:document',
+            u'plone.app.contenttypes:file',
+            u'plone.app.contenttypes:folder',
+            u'plone.app.contenttypes:image',
+            u'plone.app.contenttypes:link',
+            u'plone.app.contenttypes:newsitem',
+            u'plone.app.contenttypes:core',
         ]
 
 
@@ -327,12 +334,8 @@ def configure_members_folder(portal, target_language):
         container.reindexObject()
         _publish(container)
 
-        # add index_html to Members area
-        if 'index_html' not in container:
-            container._setObject('index_html', PythonScript('index_html'))
-            index_html = getattr(container, 'index_html')
-            index_html.write(member_indexhtml)
-            index_html.ZPythonScript_setTitle('User Search')
+        # set member search as default layout to Members Area
+        container.setLayout('@@member-search')
 
         # Block all right column portlets by default
         manager = queryUtility(IPortletManager, name='plone.rightcolumn')
@@ -346,7 +349,7 @@ def configure_members_folder(portal, target_language):
             assignable.setBlacklistStatus('content_type', True)
 
 
-def importContent(context):
+def step_import_content(context):
     """Remove existing AT-content and create DX-content instead."""
 
     if context.readDataFile('plone.app.contenttypes_content.txt') is None:
@@ -401,7 +404,7 @@ def _delete_at_example_content(portal):
         portal.manage_delObjects(to_delete)
 
 
-def setupVarious(context):
+def step_setup_various(context):
     if context.readDataFile('plone.app.contenttypes_default.txt') is None:
         return
     portal = context.getSite()

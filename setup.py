@@ -1,9 +1,16 @@
 from setuptools import setup, find_packages
 
-version = '1.1b3.dev0'
+import os
 
-long_description = open("README.rst").read() + "\n" + \
-    open("CHANGES.rst").read()
+version = '1.2a2.dev0'
+
+
+def read(*rnames):
+    return open(os.path.join(os.path.dirname(__file__), *rnames)).read()
+
+long_description = \
+    read('docs', 'README.rst') + \
+    read('docs', 'CHANGES.rst')
 
 setup(name='plone.app.contenttypes',
       version=version,
@@ -36,7 +43,6 @@ setup(name='plone.app.contenttypes',
           'plone.app.dexterity>=2.0.7',  # has a fix for INameFromFilename
           'plone.dexterity>=2.2.1',  # behaviors can provide primaryfields
           'plone.app.relationfield',
-          'plone.formwidget.querystring',
           'plone.namedfile [blobs]',
           'plone.app.versioningbehavior',
       ],
@@ -47,7 +53,7 @@ setup(name='plone.app.contenttypes',
               'plone.app.robotframework',
               'plone.app.testing[robot]>=4.2.4',  # we need ROBOT_TEST_LEVEL
               'Products.ATContentTypes',
-              'Products.contentmigration',
+              'Products.contentmigration>=2.1.8.dev0',
           ],
           'atrefs': [
               'plone.app.referenceablebehavior',

@@ -3,23 +3,33 @@ from Products.Archetypes.ExtensibleMetadata import ExtensibleMetadata
 from Products.CMFCore.interfaces import IPropertiesTool
 from Products.CMFCore.utils import getToolByName
 from Products.CMFDefault.DublinCore import DefaultDublinCoreImpl
+from Products.CMFPlone import PloneMessageFactory as _
 from Products.Five.browser import BrowserView
 from Products.Five.browser.pagetemplatefile import ViewPageTemplateFile
+from Products.statusmessages.interfaces import IStatusMessage
 from datetime import datetime
 from plone.app.contenttypes.migration import migration
 from plone.app.contenttypes.migration.utils import ATCT_LIST
+from plone.app.contenttypes.migration.utils import installTypeIfNeeded
 from plone.app.contenttypes.migration.utils import isSchemaExtended
+from plone.app.contenttypes.utils import DEFAULT_TYPES
+from plone.browserlayer.interfaces import ILocalBrowserLayerType
 from plone.dexterity.content import DexterityContent
 from plone.dexterity.interfaces import IDexterityContent
 from plone.z3cform.layout import wrap_form
 from pprint import pformat
-from z3c.form import form, field, button
+from z3c.form import button
+from z3c.form import field
+from z3c.form import form
 from z3c.form.browser.checkbox import CheckBoxFieldWidget
 from z3c.form.interfaces import HIDDEN_MODE
 from zope import schema
 from zope.component import getMultiAdapter
 from zope.component import queryUtility
 from zope.interface import Interface
+
+import logging
+logger = logging.getLogger(__name__)
 
 # Schema Extender allowed interfaces
 
@@ -77,7 +87,7 @@ class FixBaseClasses(BrowserView):
 
 
 class MigrateFromATContentTypes(BrowserView):
-    """ Migrate the default-types (except event and topic).
+    """Migrate the default-types (except event and topic).
     This view can be called directly and it will migrate all content
     provided they were not schema-extended.
     This is also called by the migration-form below with some variables.
@@ -129,6 +139,12 @@ class MigrateFromATContentTypes(BrowserView):
                 object_provides=v['iface'].__identifier__,
                 meta_type=v['old_meta_type'])
             )
+            # TODO: num objects is 0 for BlobFile and BlobImage
+            logger.info(
+                "Migrating %s objects of type %s" %
+                (amount_to_be_migrated, k)
+            )
+            installTypeIfNeeded(v['new_type_name'])
             # call the migrator
             v['migrator'](portal)
 
@@ -255,6 +271,7 @@ class ATCTMigratorForm(form.Form):
     fields['content_types'].widgetFactory = CheckBoxFieldWidget
     fields['extended_content'].widgetFactory = CheckBoxFieldWidget
     ignoreContext = True
+    enableCSRFProtection = True
 
     @button.buttonAndHandler(u'Migrate', name='migrate')
     def handle_migrate(self, action):
@@ -326,9 +343,10 @@ class ATCTMigratorHelpers(BrowserView):
         }
 
     def linguaplone_installed(self):
-        """ Is Products.LinguaPlone installed ? """
-        pq = getToolByName(self.context, 'portal_quickinstaller')
-        return pq.isProductInstalled('LinguaPlone')
+        """Is Products.LinguaPlone installed?
+        """
+        existing = queryUtility(ILocalBrowserLayerType, name='LinguaPlone')
+        return bool(existing)
 
 
 class ATCTMigratorResults(BrowserView):
@@ -343,3 +361,56 @@ class ATCTMigratorResults(BrowserView):
             return False
         # results['atct_list'] = ATCT_LIST
         return results
+
+
+class PACInstaller(form.Form):
+    """Install p.a.c and redirect to migration-form."""
+
+    fields = field.Fields()
+    template = ViewPageTemplateFile('pac_installer.pt')
+    enableCSRFProtection = True
+
+    @property
+    def pac_installable(self):
+        qi = getToolByName(self.context, "portal_quickinstaller")
+        pac_installed = qi.isProductInstalled('plone.app.contenttypes')
+        pac_installable = qi.isProductInstallable('plone.app.contenttypes')
+        return pac_installable and not pac_installed
+
+    @property
+    def pac_installed(self):
+        qi = getToolByName(self.context, "portal_quickinstaller")
+        return qi.isProductInstalled('plone.app.contenttypes')
+
+    @button.buttonAndHandler(_(u'Install'), name='install')
+    def handle_install(self, action):
+        """ install p.a.c's core-profile (no fti's).
+        This way the AT-fti's are still valid.
+        """
+        url = self.context.absolute_url()
+        qi = getToolByName(self.context, "portal_quickinstaller")
+        fail = qi.installProduct(
+            'plone.app.contenttypes',
+            profile='plone.app.contenttypes:core',
+        )
+        if fail:
+            messages = IStatusMessage(self.request)
+            messages.addStatusMessage(fail, type='error')
+            self.request.response.redirect(url)
+        # For types without any instances we want to instantly
+        # replace the AT-FTI's with DX-FTI's.
+        self.installTypesWithoutItems()
+
+        url = url + '/@@atct_migrator'
+        self.request.response.redirect(url)
+
+    def installTypesWithoutItems(self):
+        catalog = getToolByName(self.context, "portal_catalog")
+        for types_name in DEFAULT_TYPES:
+            if not catalog.unrestrictedSearchResults(portal_type=types_name):
+                installTypeIfNeeded(types_name)
+
+    @button.buttonAndHandler(
+        _(u'label_cancel', default=u'Cancel'), name='cancel')
+    def handle_cancel(self, action):
+        self.request.response.redirect(self.context.absolute_url())
