@@ -17,6 +17,10 @@ class PloneAppContenttypesSetupTest(unittest.TestCase):
         setRoles(self.portal, TEST_USER_ID, ['Manager'])
         self.types = self.portal.portal_types
 
+    def test_installed(self):
+        qi = self.portal['portal_quickinstaller']
+        self.assertTrue(qi.isProductInstalled('plone.app.contenttypes'))
+
     def test_old_topic_disabled(self):
         self.assertTrue('Topic' not in self.types.objectIds())
 
