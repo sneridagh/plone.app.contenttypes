@@ -230,9 +230,25 @@ class ATCTContentMigrator(CMFItemMigrator, ReferenceMigrator):
             '/'.join(self.old.getPhysicalPath())
         )
 
+    def beforeChange_store_comments_on_portal(self):
+        """Comments from plone.app.discussion are lost when the
+           old object is renamed...
+           We save the comments in a safe place..."""
+        from plone.app.contenttypes.migration.utils import move_comments
+        portal = getToolByName(self.old, 'portal_url').getPortalObject()
+        move_comments(self.old, portal)
+
     def migrate_atctmetadata(self):
         field = self.old.getField('excludeFromNav')
         self.new.exclude_from_nav = field.get(self.old)
+
+    def migrate_comments(self):
+        """Migrate the plone.app.discussion comments.
+           Comments were stored on the portal, get them and
+           Copy the conversations from old to new object."""
+        from plone.app.contenttypes.migration.utils import move_comments
+        portal = getToolByName(self.old, 'portal_url').getPortalObject()
+        move_comments(portal, self.new)
 
     def migrate_custom(self):
         """Get all ICustomMigrator registered migrators and run the migration.

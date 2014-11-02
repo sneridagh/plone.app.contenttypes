@@ -7,6 +7,7 @@ from archetypes.schemaextender.interfaces import IOrderableSchemaExtender
 from archetypes.schemaextender.interfaces import ISchemaExtender
 from archetypes.schemaextender.interfaces import ISchemaModifier
 from plone.app.contenttypes.utils import DEFAULT_TYPES
+from plone.app.discussion.interfaces import IConversation
 from plone.dexterity.interfaces import IDexterityFTI
 from zope.component import getGlobalSiteManager
 from zope.component.hooks import getSite
@@ -102,3 +103,11 @@ def installTypeIfNeeded(type_name):
     environ = DirectoryImportContext(ps, profile_path)
     parent_path = 'types/'
     importObjects(dx_fti, parent_path, environ)
+
+
+def move_comments(source_object, target_object):
+    source_conversation = IConversation(source_object)
+    target_conversation = IConversation(target_object)
+    for comment in source_conversation.getComments():
+        del source_conversation[comment.comment_id]
+        target_conversation.addComment(comment)

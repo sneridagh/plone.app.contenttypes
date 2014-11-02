@@ -1280,3 +1280,34 @@ class MigrateFromATContentTypesTest(unittest.TestCase):
         )
         results = migration_view()
         self.assertIn('@@migrate_from_atct?migrate=1', results)
+
+    def test_comments_are_migrated(self):
+        """add some comments and check that it is correctly migrated.
+           XXX fixme : original comment id is not kept, comments are created with new ids..."""
+        from zope.component import createObject
+        from plone.app.discussion.interfaces import IConversation
+        from plone.app.contenttypes.migration.migration import DocumentMigrator
+
+        # create an ATDocument
+        self.portal.invokeFactory('Document', 'document')
+        at_document = self.portal['document']
+        at_document.setText(u'Document with some comments')
+
+        # add some comments to the document
+        conversation = IConversation(at_document)
+        comment = createObject('plone.Comment')
+        conversation.addComment(comment)
+
+        # migrate
+        applyProfile(self.portal, 'plone.app.contenttypes:default')
+        migrator = self.get_migrator(at_document, DocumentMigrator)
+        migrator.migrate()
+
+        # assertions
+        dx_document = self.portal['document']
+        # comments were migrated
+        conversation = IConversation(dx_document)
+        self.failUnless(len(conversation) == 1)
+        # no more comments on the portal
+        conversation = IConversation(self.portal)
+        self.failIf(conversation)
