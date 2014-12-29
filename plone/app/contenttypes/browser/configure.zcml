@@ -11,6 +11,10 @@
       name="collection.css"
       file="stylesheets/collection.css" />
 
+  <browser:resource
+      name="plone.app.contenttypes.collection.js"
+      file="collection.js" />
+
 
   <!-- VIEWS FOR COLLECTION ITEM -->
 

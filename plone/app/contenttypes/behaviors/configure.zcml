@@ -59,6 +59,13 @@
     template="richtext_gettext.pt"
     />
 
+  <browser:page
+    name="is_subcollection"
+    for=".collection.ISyndicatableCollection"
+    class=".collection.SubCollectionHelper"
+    permission="zope2.View"
+    />
+
   <utility
       component=".collection.MetaDataFieldsVocabularyFactory"
       name="plone.app.contenttypes.metadatafields" />

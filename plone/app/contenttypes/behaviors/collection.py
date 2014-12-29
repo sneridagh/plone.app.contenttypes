@@ -4,6 +4,7 @@ from Products.CMFPlone.browser.syndication.adapters import CollectionFeed \
     as BaseCollectionFeed
 from Products.CMFPlone.interfaces.syndication import IFeed
 from Products.CMFPlone.interfaces.syndication import ISyndicatable
+from Products.Five import BrowserView
 from plone.app.contentlisting.interfaces import IContentListing
 from plone.app.contenttypes import _
 from plone.autoform.interfaces import IFormFieldProvider
@@ -46,6 +47,14 @@ class ICollection(model.Schema):
                                key_type=schema.TextLine()),
         required=False,
         missing_value=''
+    )
+
+    acquire_query = schema.Bool(
+        title=_(u'Inherit search terms'),
+        description=_(u"If the parent is also a collection inherit it's "
+                      u"search terms and extend/override with current ones. "
+                      u"The preview is not affected by this."),
+        required=False,
     )
 
     sort_on = schema.TextLine(
@@ -136,8 +145,17 @@ class Collection(object):
                     'v': '/',
                 })
 
+        # Add the current query to the parent's query, so that the
+        # current overrides the parent (if they query for the same
+        # parameters).
+        finalquery = query
+        if getattr(self, 'acquire_query', False):
+            parent = self.context.__parent__
+            if ISyndicatableCollection.providedBy(parent):
+                finalquery = parent.query + query
+
         return querybuilder(
-            query=query, batch=batch, b_start=b_start, b_size=b_size,
+            query=finalquery, batch=batch, b_start=b_start, b_size=b_size,
             sort_on=sort_on, sort_order=sort_order,
             limit=limit, brains=brains, custom_query=custom_query
         )
@@ -236,9 +254,24 @@ class Collection(object):
 
     customViewFields = property(_get_customViewFields, _set_customViewFields)
 
+    def _set_acquire_query(self, value):
+        self.context.acquire_query = value
+
+    def _get_acquire_query(self):
+        return getattr(self.context, 'acquire_query', False)
+
+    acquire_query = property(_get_acquire_query, _set_acquire_query)
+
 
 @implementer(IFeed)
 class CollectionFeed(BaseCollectionFeed):
 
     def _brains(self):
         return ICollection(self.context).results(batch=False)[:self.limit]
+
+
+class SubCollectionHelper(BrowserView):
+
+    def __call__(self):
+        if ISyndicatableCollection.providedBy(self.context.__parent__):
+            return True
