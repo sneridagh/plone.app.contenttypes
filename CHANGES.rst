@@ -4,7 +4,8 @@ Changelog
 1.2.3 (unreleased)
 ------------------
 
-- Nothing changed yet.
+- redirect_links property has moved to the configuration registry.
+  [esteele]
 
 
 1.2.2 (2015-09-15)
