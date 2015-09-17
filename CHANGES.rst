@@ -4,7 +4,8 @@ Changelog
 1.2.3 (unreleased)
 ------------------
 
-- redirect_links property has moved to the configuration registry.
+- redirect_links, types_view_action_in_listings properies have moved to the
+  configuration registry.
   [esteele]
 
 
